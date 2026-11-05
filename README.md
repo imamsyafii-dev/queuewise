@@ -1,16 +1,34 @@
 # Queuewise
 
-Queuewise adalah MVP sistem appointment dan antrean untuk bisnis berbasis layanan seperti klinik, salon, dan bengkel.
+Queuewise adalah MVP sistem appointment dan antrean untuk bisnis berbasis layanan seperti klinik, salon, dan bengkel. Sistem memisahkan pengalaman customer untuk booking dengan area operasional staff untuk mengelola kedatangan dan antrean.
 
-## Fitur MVP
+## Status pengembangan
 
-- Booking appointment publik
-- Validasi bentrok jadwal staff
-- Kode booking unik
-- Check-in dan nomor antrean harian
+Alur inti sudah dapat dicoba secara lokal:
+
+```text
+Customer membuat booking
+        ↓
+Staff melakukan check-in
+        ↓
+Customer masuk antrean dan mendapat nomor
+        ↓
+Staff memanggil → mulai layanan → selesai
+        ↓
+Layar antrean publik diperbarui real-time
+```
+
+Lihat [roadmap pengembangan](docs/ROADMAP.md) untuk fitur berikutnya dan statusnya.
+
+## Fitur saat ini
+
+- Booking appointment publik dengan kode booking unik
+- Validasi jadwal staff yang bentrok
+- Data demo organisasi, cabang, layanan, dan staff
+- Check-in dan pembuatan nomor antrean harian
 - Operasional antrean: panggil, mulai layanan, dan selesaikan
-- Layar antrean publik real-time melalui Redis Pub/Sub dan SSE
-- Dashboard operasional lokal
+- Layar antrean publik real-time memakai Redis Pub/Sub dan SSE
+- Dashboard staff lokal untuk melihat appointment dan antrean
 
 ## Menjalankan aplikasi
 
@@ -29,7 +47,7 @@ cd ..
 docker compose exec -T postgres psql -v ON_ERROR_STOP=1 -U queuewise -d queuewise < backend/migrations/000001_create_queuewise_schema.sql
 ```
 
-Migration ini juga membuat data demo Klinik Sehat Sentosa, dua layanan, dan dua staff.
+Migration ini membuat data demo Klinik Sehat Sentosa, satu cabang, dua layanan, dan dua staff.
 
 ### 3. Jalankan backend
 
@@ -64,6 +82,16 @@ Frontend tersedia di `http://localhost:3000`.
 | `/admin/appointments` | Daftar dan check-in appointment |
 | `/admin/queue` | Panggil, mulai, dan selesaikan antrean |
 
+## Stack teknologi
+
+| Layer | Teknologi | Peran |
+| --- | --- | --- |
+| Backend | Go + Gin | REST API dan aturan bisnis booking/antrean |
+| Database utama | PostgreSQL | Menyimpan data organisasi, customer, appointment, dan antrean |
+| Real-time | Redis Pub/Sub + SSE | Mengabarkan perubahan antrean ke semua layar publik |
+| Frontend | Next.js + TypeScript | Area customer dan dashboard staff |
+| Local infrastructure | Docker Compose | Menjalankan PostgreSQL dan Redis |
+
 ## Catatan MVP
 
-Dashboard admin saat ini sengaja berjalan tanpa autentikasi agar alur lokal dapat dicoba langsung. Sebelum deployment, tambahkan authentication/authorization, rate limiting untuk endpoint publik, pembayaran, dan worker Redis untuk reminder.
+Dashboard admin saat ini sengaja berjalan tanpa autentikasi agar alur lokal dapat dicoba langsung. Jangan gunakan mode ini pada production. Authentication, reminder, pembayaran, dan fitur production lainnya tercatat di [roadmap](docs/ROADMAP.md).
