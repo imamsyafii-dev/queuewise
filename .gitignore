@@ -2,6 +2,7 @@
 .env.local
 backend/.env
 frontend/.env.local
+!frontend/.env.local.example
 
 node_modules/
 frontend/node_modules/
