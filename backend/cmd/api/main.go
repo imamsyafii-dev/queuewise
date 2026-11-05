@@ -30,7 +30,7 @@ func main() {
 	}
 	defer redisClient.Close()
 
-	router := router.New(db, cfg)
+	router := router.New(db, redisClient, cfg)
 
 	log.Printf("Queuewise API running on http://localhost:%s", cfg.AppPort)
 

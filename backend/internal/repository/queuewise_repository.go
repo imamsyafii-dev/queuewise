@@ -225,7 +225,7 @@ func (r *QueuewiseRepository) QueueBoard(ctx context.Context, branchSlug string)
 	return board, rows.Err()
 }
 
-func (r *QueuewiseRepository) UpdateQueueStatus(ctx context.Context, queueID, action string) error {
+func (r *QueuewiseRepository) UpdateQueueStatus(ctx context.Context, queueID, action string) (string, error) {
 	updates := map[string]struct{ queueStatus, appointmentStatus, timestamp string }{
 		"call":     {"CALLED", "CALLED", "called_at=NOW()"},
 		"start":    {"IN_SERVICE", "IN_SERVICE", "started_at=NOW()"},
@@ -233,23 +233,31 @@ func (r *QueuewiseRepository) UpdateQueueStatus(ctx context.Context, queueID, ac
 	}
 	update, ok := updates[action]
 	if !ok {
-		return fmt.Errorf("unknown queue action")
+		return "", fmt.Errorf("unknown queue action")
 	}
 	tx, err := r.db.Begin(ctx)
 	if err != nil {
-		return err
+		return "", err
 	}
 	defer func() { _ = tx.Rollback(ctx) }()
 	var appointmentID string
-	err = tx.QueryRow(ctx, `UPDATE queue_entries SET status=$2, `+update.timestamp+` WHERE id=$1 RETURNING appointment_id`, queueID, update.queueStatus).Scan(&appointmentID)
+	var branchID string
+	err = tx.QueryRow(ctx, `UPDATE queue_entries SET status=$2, `+update.timestamp+` WHERE id=$1 RETURNING appointment_id, branch_id`, queueID, update.queueStatus).Scan(&appointmentID, &branchID)
 	if err != nil {
-		return err
+		return "", err
 	}
 	_, err = tx.Exec(ctx, `UPDATE appointments SET status=$2 WHERE id=$1`, appointmentID, update.appointmentStatus)
 	if err != nil {
-		return err
+		return "", err
 	}
-	return tx.Commit(ctx)
+	var branchSlug string
+	if err := tx.QueryRow(ctx, `SELECT slug FROM branches WHERE id=$1`, branchID).Scan(&branchSlug); err != nil {
+		return "", err
+	}
+	if err := tx.Commit(ctx); err != nil {
+		return "", err
+	}
+	return branchSlug, nil
 }
 
 func newBookingCode() (string, error) {

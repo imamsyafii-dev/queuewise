@@ -9,7 +9,7 @@ Queuewise adalah MVP sistem appointment dan antrean untuk bisnis berbasis layana
 - Kode booking unik
 - Check-in dan nomor antrean harian
 - Operasional antrean: panggil, mulai layanan, dan selesaikan
-- Layar antrean publik yang diperbarui setiap 10 detik
+- Layar antrean publik real-time melalui Redis Pub/Sub dan SSE
 - Dashboard operasional lokal
 
 ## Menjalankan aplikasi

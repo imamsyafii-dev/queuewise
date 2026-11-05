@@ -6,11 +6,13 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/imamsyafii-dev/queuewise/backend/internal/config"
 	"github.com/imamsyafii-dev/queuewise/backend/internal/http/handler"
+	"github.com/imamsyafii-dev/queuewise/backend/internal/realtime"
 	"github.com/imamsyafii-dev/queuewise/backend/internal/repository"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/redis/go-redis/v9"
 )
 
-func New(db *pgxpool.Pool, cfg config.Config) *gin.Engine {
+func New(db *pgxpool.Pool, redisClient *redis.Client, cfg config.Config) *gin.Engine {
 	engine := gin.Default()
 	engine.Use(cors())
 
@@ -21,13 +23,14 @@ func New(db *pgxpool.Pool, cfg config.Config) *gin.Engine {
 		})
 	})
 
-	queuewiseHandler := handler.NewQueuewiseHandler(repository.NewQueuewiseRepository(db))
+	queuewiseHandler := handler.NewQueuewiseHandler(repository.NewQueuewiseRepository(db), realtime.NewQueueEvents(redisClient))
 	public := engine.Group("/api/public")
 	{
 		public.GET("/catalog", queuewiseHandler.Catalog)
 		public.POST("/appointments", queuewiseHandler.CreateAppointment)
 		public.GET("/appointments/:bookingCode", queuewiseHandler.Appointment)
 		public.GET("/queue/:branchSlug", queuewiseHandler.QueueBoard)
+		public.GET("/queue/:branchSlug/events", queuewiseHandler.QueueEvents)
 	}
 	admin := engine.Group("/api/admin")
 	{
